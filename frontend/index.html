@@ -65,7 +65,8 @@
         console.log(
           "Running in production mode, fetching document from cloudflare worker.",
         );
-      const url = `https://typstlink.me-bd1.workers.dev/typst?url=${encodeURIComponent(documentUrl)}`;
+        // const url = `https://typstlink.me-bd1.workers.dev/typst?url=${encodeURIComponent(documentUrl)}`;
+        const url = `https://worker.typst.link?url=${encodeURIComponent(documentUrl)}`;
       const response = await fetch(url);
         typstContent = await response.text();
       }
