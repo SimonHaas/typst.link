@@ -12,11 +12,11 @@
     <script
       type="module"
       src="https://cdn.jsdelivr.net/npm/@myriaddreamin/typst.ts/dist/esm/contrib/all-in-one-lite.bundle.js"
-  id="typst"
-></script>
+      id="typst"
+    ></script>
   </head>
   <body>
-    <div id="pdf-viewer"></div>
+    <div id="pdf-container"></div>
     <script type="module">
       /// Initializes the Typst compiler and renderer. Since we use "all-in-one-lite.bundle.js" instead of
       /// "all-in-one.bundle.js" we need to tell that the wasm module files can be loaded from CDN (jsdelivr).
@@ -36,6 +36,22 @@
 
       const demoFile =
         "https://raw.githubusercontent.com/echozulucode/typst-examples/refs/heads/main/01-basics.typ";
+
+      let backendUrl;
+      if (
+        location.hostname === "localhost" ||
+        location.hostname === "127.0.0.1"
+      ) {
+        console.log(
+          "Running in development mode, fetching document from local backend.",
+        );
+        backendUrl = "http://localhost:8787";
+      } else {
+        console.log(
+          "Running in production mode, fetching document from cloudflare worker.",
+        );
+        backendUrl = "https://worker.typst.link";
+      }
 
       let typstContent;
 
@@ -57,22 +73,10 @@
 
           ${window.location}?url=${demoFile}
         `;
-      } else if (
-        location.hostname === "localhost" ||
-        location.hostname === "127.0.0.1"
-      ) {
-        console.log(
-          "Running in development mode, fetching document from local backend.",
-        );
-        const url = `http://127.0.0.1:8787?url=${encodeURIComponent(documentUrl)}`;
-        const response = await fetch(url);
-        typstContent = await response.text();
       } else {
-        console.log(
-          "Running in production mode, fetching document from cloudflare worker.",
-        );
-        const url = `https://worker.typst.link?url=${encodeURIComponent(documentUrl)}`;
-      const response = await fetch(url);
+        console.log("Fetching document content...");
+        const url = `${backendUrl}?url=${encodeURIComponent(documentUrl)}`;
+        const response = await fetch(url);
         typstContent = await response.text();
       }
 
@@ -80,22 +84,26 @@
       const pdfBlob = new Blob([pdfData], { type: "application/pdf" });
       const pdfUrl = URL.createObjectURL(pdfBlob);
 
-      import EmbedPDF from "https://cdn.jsdelivr.net/npm/@embedpdf/snippet@2/dist/embedpdf.js";
+      const iframe = document.createElement("iframe");
+      iframe.src = pdfUrl;
+      iframe.style.width = "100%";
+      iframe.style.height = "100%";
+      iframe.style.border = "none";
 
-      const viewer = EmbedPDF.init({
-        type: "container",
-        target: document.getElementById("pdf-viewer"),
-        src: pdfUrl,
-        theme: { preference: "system" },
-      });
+      const container = document.getElementById("pdf-container");
+      container.innerHTML = "";
+      container.appendChild(iframe);
     </script>
     <style>
       body {
         margin: 0;
         padding: 0;
       }
-      #pdf-viewer {
+
+      #pdf-container {
         height: 100vh;
+        width: 100%;
+        overflow: hidden;
       }
     </style>
   </body>
